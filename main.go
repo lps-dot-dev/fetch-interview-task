@@ -21,7 +21,12 @@ func processReceipt(c *gin.Context) {
 		return
 	}
 
-	receiptId := receipts.Process(receipt)
+	receiptId, processingError := receipts.Process(receipt)
+	if processingError != nil {
+		c.AbortWithError(http.StatusBadRequest, processingError)
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"id": receiptId,
 	})

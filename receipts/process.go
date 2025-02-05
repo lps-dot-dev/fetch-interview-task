@@ -1,14 +1,28 @@
 package receipts
 
-import "regexp"
+import (
+	"math"
+	"regexp"
+	"strconv"
+)
 
 var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 
-func Process(receipt Receipt) int {
+func Process(receipt Receipt) (int, error) {
 	score := 0
 
 	// One point for every alphanumeric character in the retailer name
 	score += len(nonAlphanumericRegex.ReplaceAllString(receipt.Retailer, ""))
 
-	return score
+	total, parsingError := strconv.ParseFloat(receipt.Total, 32)
+	if parsingError != nil {
+		return 0, parsingError
+	}
+
+	// 50 points if the total is a round dollar amount with no cents
+	if math.Floor(total) == total {
+		score += 50
+	}
+
+	return score, nil
 }
