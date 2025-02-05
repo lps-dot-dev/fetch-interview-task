@@ -29,5 +29,8 @@ func Process(receipt Receipt) (int, error) {
 		score += 25
 	}
 
+	// 5 points for every two items on the receipt
+	score += 5 * int(len(receipt.Items)/2)
+
 	return score, nil
 }
