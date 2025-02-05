@@ -24,5 +24,10 @@ func Process(receipt Receipt) (int, error) {
 		score += 50
 	}
 
+	// 25 points if the total is a multiple of `0.25`
+	if math.Mod(total, 0.25) == 0 {
+		score += 25
+	}
+
 	return score, nil
 }
