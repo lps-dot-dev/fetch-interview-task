@@ -1,5 +1,5 @@
 package receipts
 
-func Process() int {
+func Process(receipt Receipt) int {
 	return 1
 }
