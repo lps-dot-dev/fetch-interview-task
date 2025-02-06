@@ -3,12 +3,16 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
+	"fetch/cache"
 	"fetch/receipts"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+// Make a singleton cache with a lifespan of the runtime of the app
+var receiptScoreCache *cache.Cache[string, int] = cache.New[string, int]()
 
 func main() {
 	r := gin.Default()
@@ -41,6 +45,7 @@ func processReceipt(c *gin.Context) {
 	}
 
 	uuid := uuid.NewSHA1(uuid.NameSpaceURL, receiptBuffer.Bytes())
+	receiptScoreCache.Set(uuid.String(), receiptScore)
 
 	c.JSON(http.StatusOK, gin.H{
 		"id":    uuid.String(),
