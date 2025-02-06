@@ -68,7 +68,6 @@ func processReceipt(c *gin.Context) {
 	receiptScoreCache.Set(uuid.String(), receiptScore)
 
 	c.IndentedJSON(http.StatusOK, gin.H{
-		"id":     uuid.String(),
-		"points": receiptScore,
+		"id": uuid.String(),
 	})
 }
