@@ -1,11 +1,15 @@
 package receipts
 
 import (
+	"fmt"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
+
+const emptyReceiptId = 0
 
 var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 
@@ -17,7 +21,7 @@ func Process(receipt Receipt) (int, error) {
 
 	total, parsingError := strconv.ParseFloat(receipt.Total, 32)
 	if parsingError != nil {
-		return 0, parsingError
+		return emptyReceiptId, parsingError
 	}
 
 	// 50 points if the total is a round dollar amount with no cents
@@ -40,16 +44,26 @@ func Process(receipt Receipt) (int, error) {
 	 */
 	for _, receiptItem := range receipt.Items {
 		trimmedDescription := strings.TrimSpace(receiptItem.ShortDescription)
-		if len(trimmedDescription)%3 != 0 {
+		if (len(trimmedDescription) % 3) != 0 {
 			continue
 		}
 
 		itemPrice, parsingError := strconv.ParseFloat(receiptItem.Price, 32)
 		if parsingError != nil {
-			return 0, parsingError
+			return emptyReceiptId, parsingError
 		}
 
 		score += int(math.Ceil(itemPrice / 5))
+	}
+
+	purchaseDateTime, dateTimeError := time.Parse(time.DateTime, fmt.Sprintf("%s %s:00", receipt.PurchaseDate, receipt.PurchaseTime))
+	if dateTimeError != nil {
+		return emptyReceiptId, dateTimeError
+	}
+
+	// 6 points if the day in the purchase date is odd
+	if (purchaseDateTime.Day() % 2) == 1 {
+		score += 6
 	}
 
 	return score, nil
