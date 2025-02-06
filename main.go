@@ -17,7 +17,27 @@ var receiptScoreCache *cache.Cache[string, int] = cache.New[string, int]()
 func main() {
 	r := gin.Default()
 	r.POST("/receipts/process", processReceipt)
+	r.GET("/receipts/:uuid/points", getReceiptPoints)
 	r.Run() // listen and serve on 0.0.0.0:8080
+}
+
+func getReceiptPoints(c *gin.Context) {
+	var routeParams receipts.ReceiptScoreRouteParams
+	bindingError := c.ShouldBindUri(&routeParams)
+	if bindingError != nil {
+		c.AbortWithError(http.StatusBadRequest, bindingError)
+		return
+	}
+
+	receiptScore, valueFound := receiptScoreCache.Get(routeParams.Uuid)
+	if valueFound == false {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"points": receiptScore,
+	})
 }
 
 func processReceipt(c *gin.Context) {
@@ -34,8 +54,7 @@ func processReceipt(c *gin.Context) {
 		return
 	}
 
-	// We should account for duplicate receipts
-	// If the same receipt is given twice, we should return the same UUID
+	// We should account for duplicate receipts, so we will encode our receipt into bytes
 	var receiptBuffer bytes.Buffer
 	encoder := gob.NewEncoder(&receiptBuffer)
 	encodingError := encoder.Encode(receipt)
@@ -44,11 +63,12 @@ func processReceipt(c *gin.Context) {
 		return
 	}
 
+	// And use those bytes above to generate a UUID
 	uuid := uuid.NewSHA1(uuid.NameSpaceURL, receiptBuffer.Bytes())
 	receiptScoreCache.Set(uuid.String(), receiptScore)
 
-	c.JSON(http.StatusOK, gin.H{
-		"id":    uuid.String(),
-		"score": receiptScore,
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"id":     uuid.String(),
+		"points": receiptScore,
 	})
 }

@@ -12,3 +12,7 @@ type ReceiptItem struct {
 	ShortDescription string `json:"shortDescription" binding:"required"`
 	Price            string `json:"price" binding:"numeric"`
 }
+
+type ReceiptScoreRouteParams struct {
+	Uuid string `uri:"uuid" binding:"required,uuid"`
+}
