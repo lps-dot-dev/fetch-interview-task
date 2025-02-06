@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const emptyReceiptId = 0
+const noScore = 0
 
 var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 
@@ -21,7 +21,7 @@ func Process(receipt Receipt) (int, error) {
 
 	total, parsingError := strconv.ParseFloat(receipt.Total, 32)
 	if parsingError != nil {
-		return emptyReceiptId, parsingError
+		return noScore, parsingError
 	}
 
 	// 50 points if the total is a round dollar amount with no cents
@@ -50,7 +50,7 @@ func Process(receipt Receipt) (int, error) {
 
 		itemPrice, parsingError := strconv.ParseFloat(receiptItem.Price, 32)
 		if parsingError != nil {
-			return emptyReceiptId, parsingError
+			return noScore, parsingError
 		}
 
 		score += int(math.Ceil(itemPrice / 5))
@@ -58,12 +58,17 @@ func Process(receipt Receipt) (int, error) {
 
 	purchaseDateTime, dateTimeError := time.Parse(time.DateTime, fmt.Sprintf("%s %s:00", receipt.PurchaseDate, receipt.PurchaseTime))
 	if dateTimeError != nil {
-		return emptyReceiptId, dateTimeError
+		return noScore, dateTimeError
 	}
 
 	// 6 points if the day in the purchase date is odd
 	if (purchaseDateTime.Day() % 2) == 1 {
 		score += 6
+	}
+
+	// 10 points if the time of purchase is after 2:00pm and before 4:00pm
+	if ((purchaseDateTime.Hour() >= 14) && (purchaseDateTime.Minute() > 0)) && purchaseDateTime.Hour() < 16 {
+		score += 10
 	}
 
 	return score, nil
